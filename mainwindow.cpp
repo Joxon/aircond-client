@@ -240,15 +240,19 @@ void MainWindow::loop()
                     ui->state_label->setText("no wind");
                 }
             }
+            else if(wind==0)
+            {
+               natural_temp();
+               if(!is_working&&cur_temperature-set_temperature>=0.89)
+               {
+                   qDebug() << "start working" << endl;
+                   is_working=true;
+                   send_request(0,roomID,1,set_temperature,last_wind);
+                }
+            }
             else
             {
-                natural_temp();
-                if (!is_working && (cur_temperature - set_temperature >= 0.89))
-                {
-                    qDebug() << "start working" << endl;
-                    is_working = true;
-                    send_request(0, roomID, 1, set_temperature, last_wind);
-                }
+                ui->state_label->setText("no wind");
             }
         }
         else //空调不工作
