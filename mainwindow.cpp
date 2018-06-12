@@ -18,8 +18,8 @@ int     last_wind;                  //记录风速的最新设置
 bool    is_serving = false;         //是否有服务资源
 bool    is_working = true;          //是否正在工作
 double  cost       = 0.0;           //本次消费
-QString roomID     = "zdh";
-QString serverIP   = "10.206.12.213";
+QString roomID     = "zdhnb1";
+QString serverIP   = "10.206.12.202";
 quint16 serverPort = 6666;
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -49,6 +49,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     tcpSocket = new QTcpSocket(this);
     connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(readMessage()));
+
+    tcpSocket->abort();
+
+//      tcpSocket->bind(9999);
+    tcpSocket->connectToHost(serverIP, serverPort);
+    //192.168.137.1
+    send_request_common(1,roomID,cur_temperature);
 }
 
 
@@ -89,11 +96,7 @@ void MainWindow::on_power_pushButton_clicked()
     qDebug() << "is on=" << is_on << endl;
     if (is_on)
     {
-        tcpSocket->abort();
 
-//      tcpSocket->bind(9999);
-        tcpSocket->connectToHost(serverIP, serverPort);
-        //192.168.137.1
 
         //初始化部分参数
         set_temperature = 26;
