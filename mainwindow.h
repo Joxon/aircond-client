@@ -38,7 +38,11 @@ private slots:
 
     void natural_temp();
 
-    void on_pushButton_clicked();
+    void refrigerate();
+
+    void heat();
+
+    void on_mid_pushButton_clicked();
 
     void send_request(int type, QString roomID, int Switch, double temperature, int wind);
     void send_request_common(int type, QString roomID, double temperature);

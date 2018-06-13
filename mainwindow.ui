@@ -162,7 +162,7 @@
         <item row="1" column="1">
          <widget class="QLineEdit" name="lineEditServerIP">
           <property name="text">
-           <string>10.206.12.213</string>
+           <string>10.206.12.202</string>
           </property>
          </widget>
         </item>
@@ -194,16 +194,16 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="high_pushButton">
+       <widget class="QPushButton" name="pushButton">
         <property name="text">
-         <string>高档风速</string>
+         <string>中档风速</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="high_pushButton">
         <property name="text">
-         <string>服务模拟</string>
+         <string>高档风速</string>
         </property>
        </widget>
       </item>
@@ -220,7 +220,6 @@
   <tabstop>turn_up_pushButton</tabstop>
   <tabstop>turn_down_pushButton</tabstop>
   <tabstop>low_pushButton</tabstop>
-  <tabstop>high_pushButton</tabstop>
   <tabstop>pushButton</tabstop>
  </tabstops>
  <resources/>

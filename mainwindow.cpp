@@ -8,7 +8,8 @@
 #define MIN_SET_TEMPERATURE    17
 #define NO_WIND                0
 #define LOW_WIND               1
-#define HIGH_WIND              2
+#define MID_WIND               2
+#define HIGH_WIND              3
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -72,6 +73,7 @@ void MainWindow::on_power_pushButton_clicked()
 {
     is_on = !is_on;
     //qDebug() << "is on=" << is_on << endl;
+    
     if (is_on)
     {
         //初始化部分参数
@@ -127,6 +129,48 @@ void MainWindow::on_power_pushButton_clicked()
     }
 }
 
+void MainWindow::refrigerate()
+{
+    switch (wind) {
+    case HIGH_WIND:
+        cur_temperature-=0.2;
+        ui->state_label->setText(tr("强风服务中"));
+        break;
+    case MID_WIND:
+        cur_temperature-=0.1;
+        ui->state_label->setText(tr("中风服务中"));
+        break;
+    case LOW_WIND:
+        cur_temperature-=0.05;
+        ui->state_label->setText(tr("低风服务中"));
+        break;
+    default:
+        qDebug()<<"refrigerate err";
+        break;
+    }
+}
+
+void MainWindow::heat()
+{
+    switch (wind) {
+    case HIGH_WIND:
+        cur_temperature+=0.2;
+        ui->state_label->setText(tr("强风服务中"));
+        break;
+    case MID_WIND:
+        cur_temperature+=0.1;
+        ui->state_label->setText(tr("中风服务中"));
+        break;
+    case LOW_WIND:
+        cur_temperature+=0.05;
+        ui->state_label->setText(tr("低风服务中"));
+        break;
+    default:
+        qDebug()<<"refrigerate err";
+        break;
+    }
+}
+
 
 void MainWindow::loop()
 {
@@ -137,12 +181,53 @@ void MainWindow::loop()
     }
 
     qDebug() << "wind=" << wind << endl;
-    qDebug() << "last_wind=" << last_wind << endl;
-    qDebug() << "is_on" << is_on << endl;
+    //qDebug() << "last_wind=" << last_wind << endl;
+    //qDebug() << "is_on" << is_on << endl;
     if (is_on)//空调电源开
     {
         send_request_common(1, roomID, cur_temperature);
 
+        if(is_serving)//服务端管理客户端
+        {
+            switch(wind)
+            {
+            case HIGH_WIND||MID_WIND||LOW_WIND:
+                if (cur_temperature > set_temperature)
+                {
+                    //制冷
+                    refrigerate();
+                }
+                else
+                {
+                    //制热
+                    heat();
+                }
+                break;
+
+            case NO_WIND:
+                natural_temp();
+                ui->state_label->setText(tr("无风"));
+                break;
+
+            default:
+                ui->state_label->setText(tr("wind=")+wind);
+                break;
+            }
+            ui->cur_temperature_label->setText(QString::number(cur_temperature));
+            ui->set_temperature_label->setText(QString::number(set_temperature));
+            ui->cost_label->setText(QString::number(cost));
+        }
+        else
+        {
+            ui->state_label->setText("未连接到客户端");
+        }
+    }
+    else
+    {
+        ui->state_label->setText(tr("关机"));
+        ui->cost_label->setText("-");
+    }
+        /*
         if ((cur_temperature != set_temperature) || ((cur_temperature == set_temperature) && is_working))
         {
             if (is_serving) //如果有资源
@@ -268,32 +353,15 @@ void MainWindow::loop()
     else //空调电源关，按照自然温度函数改变
     {
         natural_temp();
-    }
+    }*/
 //   ui->cost_label->setText(QString::number(cost));
-    ui->cur_temperature_label->setText(QString::number(cur_temperature));
+ //   ui->cur_temperature_label->setText(QString::number(cur_temperature));
 }
 
 
 void MainWindow::natural_temp()
 {
-    wind = 0;
-    if (!is_on)
-    {
-        ui->state_label->setText(tr("关机"));
-    }
-    else
-    {
-        if (!is_working)
-        {
-            ui->state_label->setText(tr("无风"));
-            //send_request(0,roomID,1,cur_temperature,0);
-        }
-        else
-        {
-            ui->state_label->setText(tr("等待服务"));
-        }
-    }
-    if (cur_temperature - outside_temperature >= 0.1)
+    if (cur_temperature - outside_temperature > 0.1)
     {
         cur_temperature -= 0.1;
     }
@@ -335,11 +403,16 @@ void MainWindow::on_high_pushButton_clicked()
 }
 
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_mid_pushButton_clicked()
 {
     if (is_on)
     {
-        is_serving = !is_serving;
+        wind      = MID_WIND;
+        last_wind = MID_WIND;
+
+        send_request(0, roomID, 1, set_temperature, last_wind);
+
+        ui->state_label->setText(tr("中风服务中"));
     }
 }
 
@@ -356,7 +429,7 @@ void MainWindow::readMessage()
     //double cost;
     message = tcpSocket->readAll();
 
-    //qDebug() << "readfromMessage";
+    qDebug() << "readfromMessage";
     //qDebug() << "message" << message << endl;
     QJsonDocument parse_doucment = QJsonDocument::fromJson(message, &json_error);
     if (json_error.error == QJsonParseError::NoError)
@@ -370,7 +443,7 @@ void MainWindow::readMessage()
                 if (type_value.isDouble())
                 {
                     type = type_value.toInt();
-                    //qDebug() << "type:" << type;
+                    qDebug() << "type:" << type;
                 }
             }
             if (obj.contains("switch"))
@@ -380,7 +453,7 @@ void MainWindow::readMessage()
                 {
                     Switch     = switch_value.toInt();
                     is_serving = Switch;
-                    //qDebug() << "switch:" <<Switch;
+                    qDebug() << "switch:" <<Switch;
                 }
             }
             if (obj.contains("wind"))
@@ -388,8 +461,8 @@ void MainWindow::readMessage()
                 QJsonValue wind_value = obj.take("wind");
                 if (wind_value.isDouble())
                 {
-                    Wind = wind_value.toInt();
-                    //qDebug() << "wind:" << Wind;
+                    wind = wind_value.toInt();
+                    qDebug() << "wind:" << wind;
                 }
             }
             if (obj.contains("temperature"))
@@ -398,7 +471,7 @@ void MainWindow::readMessage()
                 if (temperature_value.isDouble())
                 {
                     temperature = temperature_value.toDouble();
-                    //qDebug() << "temperature:" << temperature;
+                    qDebug() << "temperature:" << temperature;
                 }
             }
             if (obj.contains("cost"))
@@ -407,7 +480,7 @@ void MainWindow::readMessage()
                 if (cost_value.isDouble())
                 {
                     cost = cost_value.toDouble();
-                    //qDebug() << "cost:" << cost;
+                    qDebug() << "cost:" << cost;
                 }
             }
             if (obj.contains("isServed"))
@@ -416,13 +489,13 @@ void MainWindow::readMessage()
                 if (isServing_value.isDouble())
                 {
                     isServing = isServing_value.toInt();
-                    //qDebug() << "isServed:" << isServing;
+                    qDebug() << "isServed:" << isServing;
                 }
             }
         }
     }
 
-    //qDebug() <<"read_end" << endl;
+    qDebug() <<"read_end" << endl;
     ui->cost_label->setText(QString::number(cost));
 }
 
