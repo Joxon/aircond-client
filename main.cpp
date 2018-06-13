@@ -1,13 +1,21 @@
 #include "mainwindow.h"
+#include "quiwidget.h"
 #include <QApplication>
 
-
 int main(int argc, char *argv[])
-{   
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
+{
+    QApplication app(argc, argv);
+    QUIWidget    qui;
+    MainWindow   mwnd;
 
-    return a.exec();
+    app.setWindowIcon(QIcon(":/main.ico"));
+    qui.setMainWidget(&mwnd);
+    qui.setTitle("Room");
+    qui.setStyle(QUIWidget::StyleDarkGray);
+    //qui.setSizeGripEnabled(true);
+    qui.setVisible(QUIWidget::BtnMenuMax, false);
+    qui.setVisible(QUIWidget::BtnMenuThemes, true);
+    qui.show();
+
+    return app.exec();
 }
-

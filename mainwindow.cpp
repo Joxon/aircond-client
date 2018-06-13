@@ -1,5 +1,6 @@
 ﻿#include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "quiwidget.h"
 
 #include <QtCore>
 
@@ -9,30 +10,11 @@
 #define LOW_WIND               1
 #define HIGH_WIND              2
 
-double  cur_temperature;            //当前室温
-double  outside_temperature = 28.0; //室外温度恒定
-double  set_temperature;            //设定温度
-bool    is_on;                      //空调开关
-int     wind;                       //0是无风，1是低档位，2高档位
-int     last_wind;                  //记录风速的最新设置
-bool    is_serving = false;         //是否有服务资源
-bool    is_working = true;          //是否正在工作
-double  cost       = 0.0;           //本次消费
-QString roomID     = "zdhnb1";
-QString serverIP   = "10.206.12.202";
-quint16 serverPort = 6666;
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
-    setWindowFlags(Qt::CustomizeWindowHint |
-                   Qt::WindowTitleHint |
-                   Qt::WindowMinimizeButtonHint |
-                   Qt::WindowCloseButtonHint);
-    setWindowTitle(tr("房间"));
 
     cur_temperature = 28.0;
     set_temperature = 26.0;
@@ -50,12 +32,8 @@ MainWindow::MainWindow(QWidget *parent) :
     tcpSocket = new QTcpSocket(this);
     connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(readMessage()));
 
-    tcpSocket->abort();
-
-//      tcpSocket->bind(9999);
+    serverIP = ui->lineEditServerIP->text();
     tcpSocket->connectToHost(serverIP, serverPort);
-    //192.168.137.1
-    send_request_common(1,roomID,cur_temperature);
 }
 
 
@@ -93,16 +71,37 @@ void MainWindow::on_turn_down_pushButton_clicked()
 void MainWindow::on_power_pushButton_clicked()
 {
     is_on = !is_on;
-    qDebug() << "is on=" << is_on << endl;
+    //qDebug() << "is on=" << is_on << endl;
     if (is_on)
     {
-
-
         //初始化部分参数
+        QString newID = ui->lineEditRoomID->text();
+        if (newID.isEmpty())
+        {
+            QUIWidget::showMessageBoxError("房间号不能为空！");
+            is_on = false;
+            return;
+        }
+        roomID = newID;
+
+        QString newIP = ui->lineEditServerIP->text();
+        if (!QUIWidget::isIP(newIP))
+        {
+            QUIWidget::showMessageBoxError("IP不合法！");
+            is_on = false;
+            return;
+        }
+        serverIP = newIP;
+
+        if (!tcpSocket->isOpen())
+        {
+            tcpSocket->connectToHost(serverIP, serverPort);
+        }
+
         set_temperature = 26;
         last_wind       = LOW_WIND;
         wind            = LOW_WIND;
-        is_working      = true;
+        is_working      = false;
         //需要一个请求服务的函数 返回给is_surving
         send_request(0, roomID, 1, set_temperature, wind);
 
@@ -110,7 +109,7 @@ void MainWindow::on_power_pushButton_clicked()
         ui->set_temperature_label->setText(QString::number(set_temperature));
         if (is_serving)
         {
-            ui->state_label->setText(tr("低风"));
+            ui->state_label->setText(tr("低风服务中"));
         }
         else
         {
@@ -232,30 +231,30 @@ void MainWindow::loop()
                 }
                 if (wind == LOW_WIND)
                 {
-                    ui->state_label->setText("low wind");
+                    ui->state_label->setText("低风服务中");
                 }
                 else if (wind == HIGH_WIND)
                 {
-                    ui->state_label->setText("high wind");
+                    ui->state_label->setText("强风服务中");
                 }
                 else
                 {
-                    ui->state_label->setText("no wind");
+                    ui->state_label->setText("无风");
                 }
             }
-            else if(wind==0)
+            else if (wind == 0)
             {
-               natural_temp();
-               if(!is_working&&cur_temperature-set_temperature>=0.89)
-               {
-                   qDebug() << "start working" << endl;
-                   is_working=true;
-                   send_request(0,roomID,1,set_temperature,last_wind);
+                natural_temp();
+                if (!is_working && (cur_temperature - set_temperature >= 0.89))
+                {
+                    qDebug() << "start working" << endl;
+                    is_working = true;
+                    send_request(0, roomID, 1, set_temperature, last_wind);
                 }
             }
             else
             {
-                ui->state_label->setText("no wind");
+                ui->state_label->setText("无风");
             }
         }
         else //空调不工作
@@ -317,7 +316,7 @@ void MainWindow::on_low_pushButton_clicked()
         last_wind = LOW_WIND;
         send_request(0, roomID, 1, set_temperature, wind);
 
-        ui->state_label->setText(tr("低风"));
+        ui->state_label->setText(tr("低风服务中"));
     }
 }
 
@@ -331,7 +330,7 @@ void MainWindow::on_high_pushButton_clicked()
 
         send_request(0, roomID, 1, set_temperature, last_wind);
 
-        ui->state_label->setText(tr("强风"));
+        ui->state_label->setText(tr("强风服务中"));
     }
 }
 
