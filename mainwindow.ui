@@ -194,7 +194,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="mid_pushButton">
         <property name="text">
          <string>中档风速</string>
         </property>
@@ -220,7 +220,7 @@
   <tabstop>turn_up_pushButton</tabstop>
   <tabstop>turn_down_pushButton</tabstop>
   <tabstop>low_pushButton</tabstop>
-  <tabstop>pushButton</tabstop>
+  <tabstop>mid_pushButton</tabstop>
  </tabstops>
  <resources/>
  <connections/>

@@ -191,7 +191,9 @@ void MainWindow::loop()
         {
             switch(wind)
             {
-            case HIGH_WIND||MID_WIND||LOW_WIND:
+            case HIGH_WIND:
+            case MID_WIND:
+            case LOW_WIND:
                 if (cur_temperature > set_temperature)
                 {
                     //制冷
