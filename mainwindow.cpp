@@ -2,8 +2,6 @@
 #include "ui_mainwindow.h"
 #include "quiwidget.h"
 
-#include <QtCore>
-
 #define MAX_SET_TEMPERATURE    30
 #define MIN_SET_TEMPERATURE    17
 #define NO_WIND                0
@@ -32,9 +30,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     tcpSocket = new QTcpSocket(this);
     connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(readMessage()));
-
-    serverIP = ui->lineEditServerIP->text();
-    tcpSocket->connectToHost(serverIP, serverPort);
 }
 
 
@@ -72,11 +67,9 @@ void MainWindow::on_turn_down_pushButton_clicked()
 void MainWindow::on_power_pushButton_clicked()
 {
     is_on = !is_on;
-    //qDebug() << "is on=" << is_on << endl;
     
     if (is_on)
     {
-        //初始化部分参数
         QString newID = ui->lineEditRoomID->text();
         if (newID.isEmpty())
         {
@@ -95,16 +88,22 @@ void MainWindow::on_power_pushButton_clicked()
         }
         serverIP = newIP;
 
-        if (!tcpSocket->isOpen())
+        bool    newPortOK = false;
+        quint16 newPort   = ui->lineEditServerPort->text().toInt(&newPortOK);
+        if (!newPortOK || (newPort == 0))
         {
-            tcpSocket->connectToHost(serverIP, serverPort);
+            QUIWidget::showMessageBoxError("端口不合法！");
+            is_on = false;
+            return;
         }
+
+        tcpSocket->connectToHost(serverIP, serverPort);
 
         set_temperature = 26;
         last_wind       = LOW_WIND;
         wind            = LOW_WIND;
         is_working      = false;
-        //需要一个请求服务的函数 返回给is_surving
+        //需要一个请求服务的函数 返回给is_serving
         send_request(0, roomID, 1, set_temperature, wind);
 
         //显示设置
@@ -121,9 +120,8 @@ void MainWindow::on_power_pushButton_clicked()
     else
     {
         send_request(0, roomID, 0, -1, -1);
-        //5.23加的
-//      is_working = false;
-//      is_serving = false;
+        is_working = false;
+        is_serving = false;
         ui->set_temperature_label->setText("-");
         ui->state_label->setText(tr("关机"));
     }
@@ -180,9 +178,10 @@ void MainWindow::loop()
         return;
     }
 
-    qDebug() << "wind=" << wind << endl;
-    //qDebug() << "last_wind=" << last_wind << endl;
-    //qDebug() << "is_on" << is_on << endl;
+    
+//    qDebug() << "wind=" << wind << endl
+//             << "last_wind=" << last_wind << endl
+//             << "is_on=" << is_on << endl;
     if (is_on)//空调电源开
     {
         send_request_common(1, roomID, cur_temperature);
@@ -236,7 +235,7 @@ void MainWindow::loop()
             {
                 if (!is_working && (fabs(cur_temperature - set_temperature) > 0.99))
                 {
-                    qDebug() << "start working" << endl;
+                    //qDebug() << "start working" << endl;
                     is_working = true;
                     send_request(0, roomID, 1, set_temperature, last_wind);
                 }
@@ -245,14 +244,14 @@ void MainWindow::loop()
                     (((cur_temperature - set_temperature < 1) && is_working) ||
                      (cur_temperature - set_temperature >= 1))) //制冷
                 {
-                    qDebug() << "zhi leng" << endl;
+                    //qDebug() << "zhi leng" << endl;
 
                     wind = last_wind;
 
                     if (is_working && (((cur_temperature - set_temperature < 0.11) && (last_wind == LOW_WIND)) ||
                                        ((cur_temperature - set_temperature < 0.21) && (last_wind == HIGH_WIND))))
                     {
-                        qDebug() << "stop working" << endl;
+                        //qDebug() << "stop working" << endl;
                         is_working = false;
                         send_request(0, roomID, 1, set_temperature, 0);
                     }
@@ -280,7 +279,7 @@ void MainWindow::loop()
                          (((cur_temperature - set_temperature > -1) && is_working) ||
                           (cur_temperature - set_temperature <= -1)))//制热
                 {
-                    qDebug() << "gao dang" << endl;
+                    //qDebug() << "gao dang" << endl;
 
                     wind = last_wind;
 
@@ -349,8 +348,8 @@ void MainWindow::loop()
             send_request_common(1, roomID, cur_temperature);
             natural_temp();
         }
-        qDebug() << "is_working=" << is_working;
-        qDebug() << "is_serving=" << is_serving;
+//        qDebug() << "is_working=" << is_working << endl
+//                 << "is_serving=" << is_serving << endl;
     }
     else //空调电源关，按照自然温度函数改变
     {
@@ -513,7 +512,9 @@ void MainWindow::displayError(QAbstractSocket::SocketError)
 
 void MainWindow::send_request(int type, QString roomID, int Switch, double temperature, int wind)
 {
-    QJsonObject json;
+    QJsonObject   json;
+    QJsonDocument document;
+    QByteArray    byte_array;
 
     json.insert("type", type);
     json.insert("room", roomID);
@@ -521,33 +522,34 @@ void MainWindow::send_request(int type, QString roomID, int Switch, double tempe
     json.insert("temperature", temperature);
     json.insert("wind", wind);
 
-    QJsonDocument document;
     document.setObject(json);
-    QByteArray byte_array = document.toJson(QJsonDocument::Compact); \
+    byte_array = document.toJson(QJsonDocument::Compact);
 
     tcpSocket->flush();
     tcpSocket->write(byte_array);
-    qDebug() << "send_request";
-    qDebug() << "cur_temperature" << cur_temperature;
-    qDebug() << "type" << type
-             << " room" << roomID
-             << " switch" << Switch
-             << " temperture" << temperature
-             << " wind" << wind;
+//    qDebug() << "send_request";
+//    qDebug() << "cur_temperature" << cur_temperature;
+//    qDebug() << "type" << type
+//             << " room" << roomID
+//             << " switch" << Switch
+//             << " temperture" << temperature
+//             << " wind" << wind;
 }
 
 
 void MainWindow::send_request_common(int type, QString roomID, double temperature)
 {
-    QJsonObject json;
+    QJsonObject   json;
+    QJsonDocument document;
+    QByteArray    byte_array;
 
     json.insert("type", type);
     json.insert("room", roomID);
     json.insert("temperature", temperature);
-    QJsonDocument document;
-    document.setObject(json);
-    QByteArray byte_array = document.toJson(QJsonDocument::Compact);
 
+    document.setObject(json);
+
+    byte_array = document.toJson(QJsonDocument::Compact);
     tcpSocket->flush();
     tcpSocket->write(byte_array);
 }
