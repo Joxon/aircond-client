@@ -147,8 +147,12 @@
             <height>50</height>
            </size>
           </property>
+          <property name="styleSheet">
+           <string notr="true">QPushButton { background-color:	#708090 ; border-radius: 3px; color: rgb(255, 255, 255);font: 16pt &quot;楷体&quot;; } QPushButton:hover { background-color: 	#191970; color: rgb(255, 255, 255)}
+</string>
+          </property>
           <property name="text">
-           <string>开关</string>
+           <string>开  关</string>
           </property>
          </widget>
         </item>
