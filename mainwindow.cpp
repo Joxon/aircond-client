@@ -36,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->state_label->setText(tr("关机"));
 
     loopTimer = new QTimer(this);
-    connect(loopTimer, SIGNAL(timeout()), this, SLOT(loop())); //与定时器槽函数相连接
+    connect(loopTimer, SIGNAL(timeout()), this, SLOT(loop()));
     loopTimer->start(1000);
 
     socket = new QTcpSocket(this);
@@ -76,13 +76,11 @@ void MainWindow::on_turn_down_pushButton_clicked()
 }
 
 
-void MainWindow::on_power_pushButton_clicked()
+void MainWindow::on_power_pushButton_clicked(bool checked)
 {
-    isOn = !isOn;
-    //qDebug() << "is on=" << is_on << endl;
-
-    if (isOn)
+    if (checked)
     {
+        isOn = true;
         //初始化部分参数
         QString newID = ui->lineEditRoomID->text();
         if (newID.isEmpty())
@@ -139,6 +137,7 @@ void MainWindow::on_power_pushButton_clicked()
     }
     else
     {
+        isOn = false;
         sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_OFF, -1.0, -1);
         isWorking = false;
         isServing = false;

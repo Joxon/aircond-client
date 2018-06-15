@@ -22,7 +22,7 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_power_pushButton_clicked();
+    void on_power_pushButton_clicked(bool checked);
     void on_turn_up_pushButton_clicked();
     void on_turn_down_pushButton_clicked();
     void on_low_pushButton_clicked();
