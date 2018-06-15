@@ -112,11 +112,6 @@ void MainWindow::on_power_pushButton_clicked(bool checked)
 
         socket->connectToHost(serverIP, serverPort);
 
-        if (!socket->isOpen())
-        {
-            socket->connectToHost(serverIP, serverPort);
-        }
-
         settingTemperature = 26;
         lastWind           = LOW_WIND;
         wind      = LOW_WIND;

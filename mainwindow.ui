@@ -144,14 +144,14 @@
            <item row="0" column="1">
             <widget class="QLineEdit" name="lineEditRoomID">
              <property name="text">
-              <string>jiannan</string>
+              <string>test</string>
              </property>
             </widget>
            </item>
            <item row="1" column="1">
             <widget class="QLineEdit" name="lineEditServerIP">
              <property name="text">
-              <string>10.206.12.202</string>
+              <string>127.0.0.1</string>
              </property>
             </widget>
            </item>
