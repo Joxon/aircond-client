@@ -20,29 +20,21 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 private slots:
     void on_power_pushButton_clicked();
-
     void on_turn_up_pushButton_clicked();
-
     void on_turn_down_pushButton_clicked();
-
     void on_low_pushButton_clicked();
-
     void on_high_pushButton_clicked();
+    void on_mid_pushButton_clicked();
 
     void loop();
-
     void natural_temp();
-
     void refrigerate();
-
     void heat();
-
-    void on_mid_pushButton_clicked();
 
     void send_request(int type, QString roomID, int Switch, double temperature, int wind);
     void send_request_common(int type, QString roomID, double temperature);

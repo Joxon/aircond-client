@@ -374,13 +374,13 @@ void MainWindow::loop()
 
 void MainWindow::natural_temp()
 {
-    if (cur_temperature - outside_temperature > 0.1)
+    if (cur_temperature - outside_temperature > 0.05)
     {
-        cur_temperature -= 0.1;
+        cur_temperature -= 0.05;
     }
-    else if (cur_temperature - outside_temperature < -0.1)
+    else if (cur_temperature - outside_temperature < -0.05)
     {
-        cur_temperature += 0.1;
+        cur_temperature += 0.05;
     }
     else
     {
@@ -550,6 +550,11 @@ void MainWindow::send_request(int type, QString roomID, int Switch, double tempe
 
 void MainWindow::send_request_common(int type, QString roomID, double temperature)
 {
+    qDebug() << "send_request_commom:"
+             << "type =" << type
+             << "room =" << roomID
+             << "temperture =" << temperature;
+
     QJsonObject   json;
     QJsonDocument document;
     QByteArray    byte_array;
