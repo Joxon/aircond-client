@@ -154,34 +154,23 @@ void MainWindow::coolDown()
     case HIGH_WIND:
         ui->state_label->setText(tr("强风服务中"));
         currentTemperature -= 0.2;
-        if (fabs(currentTemperature - settingTemperature) < 0.19)
-        {
-            currentTemperature = settingTemperature;
-        }
         break;
 
     case MID_WIND:
         ui->state_label->setText(tr("中风服务中"));
         currentTemperature -= 0.1;
-        if (fabs(currentTemperature - settingTemperature) < 0.09)
-        {
-            currentTemperature = settingTemperature;
-        }
         break;
 
     case LOW_WIND:
         ui->state_label->setText(tr("低风服务中"));
-        currentTemperature -= 0.05;
-        if (fabs(currentTemperature - settingTemperature) < 0.049)
-        {
-            currentTemperature = settingTemperature;
-        }
-        break;
+        currentTemperature -= 0.05;        break;
 
     default:
         qDebug() << DATETIME << "coolDown: unknown wind =" << wind;
         break;
     }
+    if(currentTemperature<settingTemperature)
+        currentTemperature=settingTemperature;
 }
 
 
@@ -191,28 +180,16 @@ void MainWindow::heatUp()
     {
     case HIGH_WIND:
         currentTemperature += 0.2;
-        if (fabs(currentTemperature - settingTemperature) < 0.19)
-        {
-            currentTemperature = settingTemperature;
-        }
         ui->state_label->setText(tr("强风服务中"));
         break;
 
     case MID_WIND:
         currentTemperature += 0.1;
-        if (fabs(currentTemperature - settingTemperature) < 0.09)
-        {
-            currentTemperature = settingTemperature;
-        }
         ui->state_label->setText(tr("中风服务中"));
         break;
 
     case LOW_WIND:
         currentTemperature += 0.05;
-        if (fabs(currentTemperature - settingTemperature) < 0.049)
-        {
-            currentTemperature = settingTemperature;
-        }
         ui->state_label->setText(tr("低风服务中"));
         break;
 
@@ -220,6 +197,8 @@ void MainWindow::heatUp()
         qDebug() << DATETIME << "heatUp: unknown wind =" << wind;
         break;
     }
+    if(currentTemperature>settingTemperature)
+        currentTemperature=settingTemperature;
 }
 
 
