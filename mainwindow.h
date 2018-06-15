@@ -32,30 +32,33 @@ private slots:
     void on_mid_pushButton_clicked();
 
     void loop();
-    void natural_temp();
-    void refrigerate();
-    void heat();
+    void naturalTemp();
+    void coolDown();
+    void heatUp();
 
-    void send_request(int type, QString roomID, int Switch, double temperature, int wind);
-    void send_request_common(int type, QString roomID, double temperature);
+    void sendRequestMsg(int type, QString roomID, int Switch, double temperature, int wind);
+    void sendCommonMsg(int type, QString roomID, double temperature);
 
     void readMessage();
     void displayError(QAbstractSocket::SocketError);
 
 private:
     Ui::MainWindow *ui;
-    QTcpSocket *tcpSocket;
     QByteArray message;
 
-    double cur_temperature;             //当前室温
-    double outside_temperature = 28.0;  //室外温度恒定
-    double set_temperature;             //设定温度
-    bool is_on;                         //空调开关
-    int wind;                           //0是无风，1是低档位，2高档位
-    int last_wind;                      //记录风速的最新设置
-    bool is_serving    = false;         //是否有服务资源
-    bool is_working    = true;          //是否正在工作
-    double cost        = 0.0;           //本次消费
+    double currentTemperature;         //当前室温
+    double outsideTemperature = 28.0;  //室外温度恒定
+    double settingTemperature;         //设定温度
+
+    int wind;                          //0是无风，1是低档位，2高档位
+    int lastWind;                      //记录风速的最新设置
+
+    bool isOn;                         //空调开关
+    bool isServing = false;            //是否有服务资源
+    bool isWorking = true;             //是否正在工作
+    double cost    = 0.0;              //本次消费
+
+    QTcpSocket *socket;
     QString roomID     = "";
     QString serverIP   = "";
     quint16 serverPort = 6666;
