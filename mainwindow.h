@@ -53,12 +53,12 @@ private:
     bool is_on;                         //空调开关
     int wind;                           //0是无风，1是低档位，2高档位
     int last_wind;                      //记录风速的最新设置
-    bool is_serving = false;            //是否有服务资源
-    bool is_working = true;             //是否正在工作
-    double cost     = 0.0;              //本次消费
-    QString roomID;
-    QString serverIP;
-    quint16 serverPort;
+    bool is_serving    = false;         //是否有服务资源
+    bool is_working    = true;          //是否正在工作
+    double cost        = 0.0;           //本次消费
+    QString roomID     = "";
+    QString serverIP   = "";
+    quint16 serverPort = 6666;
 };
 
 #endif // MAINWINDOW_H
