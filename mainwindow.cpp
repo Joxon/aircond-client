@@ -131,17 +131,25 @@ void MainWindow::on_power_pushButton_clicked()
 
 void MainWindow::refrigerate()
 {
+    qDebug()<<"refrigerate"<<endl;
+
     switch (wind) {
     case HIGH_WIND:
         cur_temperature-=0.2;
+        if(fabs(cur_temperature-set_temperature<0.19))
+            cur_temperature=set_temperature;
         ui->state_label->setText(tr("强风服务中"));
         break;
     case MID_WIND:
         cur_temperature-=0.1;
         ui->state_label->setText(tr("中风服务中"));
+        if(fabs(cur_temperature-set_temperature<0.09))
+            cur_temperature=set_temperature;
         break;
     case LOW_WIND:
         cur_temperature-=0.05;
+        if(fabs(cur_temperature-set_temperature<0.049))
+            cur_temperature=set_temperature;
         ui->state_label->setText(tr("低风服务中"));
         break;
     default:
@@ -155,14 +163,20 @@ void MainWindow::heat()
     switch (wind) {
     case HIGH_WIND:
         cur_temperature+=0.2;
+        if(fabs(cur_temperature-set_temperature<0.19))
+            cur_temperature=set_temperature;
         ui->state_label->setText(tr("强风服务中"));
         break;
     case MID_WIND:
         cur_temperature+=0.1;
+        if(fabs(cur_temperature-set_temperature<0.09))
+            cur_temperature=set_temperature;
         ui->state_label->setText(tr("中风服务中"));
         break;
     case LOW_WIND:
         cur_temperature+=0.05;
+        if(fabs(cur_temperature-set_temperature<0.049))
+            cur_temperature=set_temperature;
         ui->state_label->setText(tr("低风服务中"));
         break;
     default:
@@ -199,7 +213,7 @@ void MainWindow::loop()
                     //制冷
                     refrigerate();
                 }
-                else
+                else if (cur_temperature < set_temperature)
                 {
                     //制热
                     heat();
@@ -226,136 +240,11 @@ void MainWindow::loop()
     }
     else
     {
+        natural_temp();
+        ui->cur_temperature_label->setText(QString::number(cur_temperature));
         ui->state_label->setText(tr("关机"));
         ui->cost_label->setText("-");
     }
-        /*
-        if ((cur_temperature != set_temperature) || ((cur_temperature == set_temperature) && is_working))
-        {
-            if (is_serving) //如果有资源
-            {
-                if (!is_working && (fabs(cur_temperature - set_temperature) > 0.99))
-                {
-                    qDebug() << "start working" << endl;
-                    is_working = true;
-                    send_request(0, roomID, 1, set_temperature, last_wind);
-                }
-
-                if ((cur_temperature > set_temperature) &&
-                    (((cur_temperature - set_temperature < 1) && is_working) ||
-                     (cur_temperature - set_temperature >= 1))) //制冷
-                {
-                    qDebug() << "zhi leng" << endl;
-
-                    wind = last_wind;
-
-                    if (is_working && (((cur_temperature - set_temperature < 0.11) && (last_wind == LOW_WIND)) ||
-                                       ((cur_temperature - set_temperature < 0.21) && (last_wind == HIGH_WIND))))
-                    {
-                        qDebug() << "stop working" << endl;
-                        is_working = false;
-                        send_request(0, roomID, 1, set_temperature, 0);
-                    }
-                    if (last_wind == 1) //低档
-                    {
-                        cur_temperature -= 0.1;
-                    }
-                    else if (last_wind == 2) //高档
-                    {
-                        if (cur_temperature - set_temperature >= 0.2)
-                        {
-                            cur_temperature -= 0.2;
-                        }
-                        else
-                        {
-                            cur_temperature = set_temperature;
-                        }
-                    }
-                    else
-                    {
-                        qDebug() << "refrigerating error" << endl;
-                    }
-                }
-                else if ((cur_temperature < set_temperature) &&
-                         (((cur_temperature - set_temperature > -1) && is_working) ||
-                          (cur_temperature - set_temperature <= -1)))//制热
-                {
-                    qDebug() << "gao dang" << endl;
-
-                    wind = last_wind;
-
-                    if (is_working && (((cur_temperature - set_temperature > -0.11) && (last_wind == LOW_WIND)) ||
-                                       ((cur_temperature - set_temperature > -0.21) && (last_wind == HIGH_WIND))))
-                    {
-                        is_working = false;
-                        send_request(0, roomID, 1, set_temperature, 0);
-                    }
-
-                    if (last_wind == 1) //低档
-                    {
-                        cur_temperature += 0.1;
-                    }
-                    else if (last_wind == 2) //高档
-                    {
-                        if (set_temperature - cur_temperature >= 0.2)
-                        {
-                            cur_temperature += 0.2;
-                        }
-                        else
-                        {
-                            cur_temperature = set_temperature;
-                        }
-                    }
-                    else
-                    {
-                        qDebug() << "heating error" << endl;
-                    }
-                }
-                else
-                {
-                    wind = NO_WIND;
-                    natural_temp();
-                }
-                if (wind == LOW_WIND)
-                {
-                    ui->state_label->setText("低风服务中");
-                }
-                else if (wind == HIGH_WIND)
-                {
-                    ui->state_label->setText("强风服务中");
-                }
-                else
-                {
-                    ui->state_label->setText("无风");
-                }
-            }
-            else if (wind == 0)
-            {
-                natural_temp();
-                if (!is_working && (cur_temperature - set_temperature >= 0.89))
-                {
-                    qDebug() << "start working" << endl;
-                    is_working = true;
-                    send_request(0, roomID, 1, set_temperature, last_wind);
-                }
-            }
-            else
-            {
-                ui->state_label->setText("无风");
-            }
-        }
-        else //空调不工作
-        {
-            send_request_common(1, roomID, cur_temperature);
-            natural_temp();
-        }
-        qDebug() << "is_working=" << is_working;
-        qDebug() << "is_serving=" << is_serving;
-    }
-    else //空调电源关，按照自然温度函数改变
-    {
-        natural_temp();
-    }*/
 //   ui->cost_label->setText(QString::number(cost));
  //   ui->cur_temperature_label->setText(QString::number(cur_temperature));
 }
@@ -363,13 +252,15 @@ void MainWindow::loop()
 
 void MainWindow::natural_temp()
 {
-    if (cur_temperature - outside_temperature > 0.1)
+    qDebug()<<"natural"<<endl;
+
+    if (cur_temperature - outside_temperature > 0.05)
     {
-        cur_temperature -= 0.1;
+        cur_temperature -= 0.05;
     }
-    else if (cur_temperature - outside_temperature < -0.1)
+    else if (cur_temperature - outside_temperature < -0.05)
     {
-        cur_temperature += 0.1;
+        cur_temperature += 0.05;
     }
     else
     {
@@ -384,7 +275,7 @@ void MainWindow::on_low_pushButton_clicked()
     {
         wind      = LOW_WIND;
         last_wind = LOW_WIND;
-        send_request(0, roomID, 1, set_temperature, wind);
+        send_request(0, roomID, 1, set_temperature, last_wind);
 
         ui->state_label->setText(tr("低风服务中"));
     }
@@ -474,6 +365,8 @@ void MainWindow::readMessage()
                 {
                     temperature = temperature_value.toDouble();
                     qDebug() << "temperature:" << temperature;
+                    if(temperature!=set_temperature)
+                        send_request(0,roomID,1,set_temperature,last_wind);
                 }
             }
             if (obj.contains("cost"))
@@ -547,6 +440,11 @@ void MainWindow::send_request_common(int type, QString roomID, double temperatur
     QJsonDocument document;
     document.setObject(json);
     QByteArray byte_array = document.toJson(QJsonDocument::Compact);
+    qDebug() << "send_request_commom";
+        qDebug() << "type" << type
+                 << " room" << roomID
+                 << " temperture" << temperature;
+
 
     tcpSocket->flush();
     tcpSocket->write(byte_array);
