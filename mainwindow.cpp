@@ -267,7 +267,7 @@ void MainWindow::loop()
         }
         else
         {
-            ui->state_label->setText("未连接到服务器");
+            ui->state_label->setText("等待服务中");
         }
     }
     else
