@@ -6,10 +6,17 @@
 
 #define MAX_SET_TEMPERATURE    30
 #define MIN_SET_TEMPERATURE    17
+
 #define NO_WIND                0
 #define LOW_WIND               1
 #define MID_WIND               2
 #define HIGH_WIND              3
+
+#define REQ_TYPE_CODE          0
+#define COM_TYPE_CODE          1
+
+#define SWITCH_ON              1
+#define SWITCH_OFF             0
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -19,6 +26,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     currentTemperature = 28.0;
     settingTemperature = 26.0;
+    outsideTemperature = 28.0;
+
     isOn = false;
     wind = 0;
 
@@ -26,15 +35,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->set_temperature_label->setText("-");
     ui->state_label->setText(tr("关机"));
 
-    QTimer *timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), this, SLOT(loop())); //与定时器槽函数相连接
-    timer->start(1000);
+    loopTimer = new QTimer(this);
+    connect(loopTimer, SIGNAL(timeout()), this, SLOT(loop())); //与定时器槽函数相连接
+    loopTimer->start(1000);
 
     socket = new QTcpSocket(this);
     connect(socket, SIGNAL(readyRead()), this, SLOT(readMessage()));
-
-    serverIP = ui->lineEditServerIP->text();
-    socket->connectToHost(serverIP, serverPort);
 }
 
 
@@ -49,7 +55,8 @@ void MainWindow::on_turn_up_pushButton_clicked()
     if (isOn && (settingTemperature < MAX_SET_TEMPERATURE))
     {
         settingTemperature++;
-        sendRequestMsg(0, roomID, 1, settingTemperature, lastWind);
+
+        sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_ON, settingTemperature, lastWind);
 
         ui->set_temperature_label->setText(QString::number(settingTemperature));
     }
@@ -62,7 +69,7 @@ void MainWindow::on_turn_down_pushButton_clicked()
     {
         settingTemperature--;
 
-        sendRequestMsg(0, roomID, 1, settingTemperature, lastWind);
+        sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_ON, settingTemperature, lastWind);
 
         ui->set_temperature_label->setText(QString::number(settingTemperature));
     }
@@ -117,7 +124,7 @@ void MainWindow::on_power_pushButton_clicked()
         wind      = LOW_WIND;
         isWorking = false;
         //需要一个请求服务的函数 返回给is_surving
-        sendRequestMsg(0, roomID, 1, settingTemperature, wind);
+        sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_ON, settingTemperature, wind);
 
         //显示设置
         ui->set_temperature_label->setText(QString::number(settingTemperature));
@@ -132,11 +139,10 @@ void MainWindow::on_power_pushButton_clicked()
     }
     else
     {
-        sendRequestMsg(0, roomID, 0, -1, -1);
-        //5.23加的
-//      is_working = false;
-//      is_serving = false;
-        ui->set_temperature_label->setText("-");
+        sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_OFF, -1.0, -1);
+        isWorking = false;
+        isServing = false;
+        ui->set_temperature_label->setText("N/A");
         ui->state_label->setText(tr("关机"));
     }
 }
@@ -267,7 +273,7 @@ void MainWindow::loop()
         }
         else
         {
-            ui->state_label->setText("未连接到服务器");
+            ui->state_label->setText("等待服务中");
         }
     }
     else
@@ -305,7 +311,8 @@ void MainWindow::on_low_pushButton_clicked()
     {
         wind     = LOW_WIND;
         lastWind = LOW_WIND;
-        sendRequestMsg(0, roomID, 1, settingTemperature, lastWind);
+
+        sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_ON, settingTemperature, lastWind);
 
         ui->state_label->setText(tr("低风服务中"));
     }
@@ -319,7 +326,7 @@ void MainWindow::on_high_pushButton_clicked()
         wind     = HIGH_WIND;
         lastWind = HIGH_WIND;
 
-        sendRequestMsg(0, roomID, 1, settingTemperature, lastWind);
+        sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_ON, settingTemperature, lastWind);
 
         ui->state_label->setText(tr("强风服务中"));
     }
@@ -333,7 +340,7 @@ void MainWindow::on_mid_pushButton_clicked()
         wind     = MID_WIND;
         lastWind = MID_WIND;
 
-        sendRequestMsg(0, roomID, 1, settingTemperature, lastWind);
+        sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_ON, settingTemperature, lastWind);
 
         ui->state_label->setText(tr("中风服务中"));
     }
@@ -342,29 +349,21 @@ void MainWindow::on_mid_pushButton_clicked()
 
 void MainWindow::readMessage()
 {
-    int             Switch;
-    double          temperature;
-    int             type;
-    bool            isServing;
-    QJsonParseError json_error;
+    QJsonParseError err;
+    QByteArray      bytes = socket->readAll();
+    QJsonDocument   doc   = QJsonDocument::fromJson(bytes, &err);
 
-    QByteArray message = socket->readAll();
-
-    //qDebug() << "readfromMessage";
-    //qDebug() << "message" << message << endl;
-    QJsonDocument parse_doucment = QJsonDocument::fromJson(message, &json_error);
-
-    if (json_error.error == QJsonParseError::NoError)
+    if (err.error == QJsonParseError::NoError)
     {
-        if (parse_doucment.isObject())
+        if (doc.isObject())
         {
-            QJsonObject obj = parse_doucment.object();
+            QJsonObject obj = doc.object();
             if (obj.contains("type"))
             {
                 QJsonValue type_value = obj.take("type");
                 if (type_value.isDouble())
                 {
-                    type = type_value.toInt();
+                    int type = type_value.toInt();
                     qDebug() << "type:" << type;
                 }
             }
@@ -373,7 +372,7 @@ void MainWindow::readMessage()
                 QJsonValue switch_value = obj.take("switch");
                 if (switch_value.isDouble())
                 {
-                    Switch    = switch_value.toInt();
+                    int Switch = switch_value.toInt();
                     isServing = Switch;
                     qDebug() << "switch:" << Switch;
                 }
@@ -392,11 +391,11 @@ void MainWindow::readMessage()
                 QJsonValue temperature_value = obj.take("temperature");
                 if (temperature_value.isDouble())
                 {
-                    temperature = temperature_value.toDouble();
+                    double temperature = temperature_value.toDouble();
                     qDebug() << "temperature:" << temperature;
                     if (!qFuzzyCompare(temperature, settingTemperature))//temperature != set_temperature
                     {
-                        sendRequestMsg(0, roomID, 1, settingTemperature, lastWind);
+                        sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_ON, settingTemperature, lastWind);
                     }
                 }
             }
@@ -406,6 +405,7 @@ void MainWindow::readMessage()
                 if (cost_value.isDouble())
                 {
                     cost = cost_value.toDouble();
+                    ui->cost_label->setText(QString::number(cost));
                     qDebug() << "cost:" << cost;
                 }
             }
@@ -420,18 +420,6 @@ void MainWindow::readMessage()
             }
         }
     }
-
-    qDebug() << "read_end" << endl;
-    ui->cost_label->setText(QString::number(cost));
-}
-
-
-void MainWindow::displayError(QAbstractSocket::SocketError)
-{
-    qDebug() << socket->errorString();
-//    ui->messageLabel->setText("连接失败");
-//    ui->connectBtn->setEnabled(true);
-//    killTimer(refresh);
 }
 
 

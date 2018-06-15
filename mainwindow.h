@@ -9,8 +9,6 @@
 #pragma execution_character_set("utf-8")
 #endif
 
-class QTcpSocket;
-
 namespace Ui {
 class MainWindow;
 }
@@ -40,28 +38,27 @@ private slots:
     void sendCommonMsg(int type, QString roomID, double temperature);
 
     void readMessage();
-    void displayError(QAbstractSocket::SocketError);
 
 private:
     Ui::MainWindow *ui;
-    QByteArray message;
+    QTimer *loopTimer;
 
-    double currentTemperature;         //当前室温
-    double outsideTemperature = 28.0;  //室外温度恒定
-    double settingTemperature;         //设定温度
+    double currentTemperature; //当前室温
+    double outsideTemperature; //室外温度
+    double settingTemperature; //设定温度
 
-    int wind;                          //0是无风，1是低档位，2高档位
-    int lastWind;                      //记录风速的最新设置
+    int wind;                  //0是无风，1是低档位，2高档位
+    int lastWind;              //记录风速的最新设置
 
-    bool isOn;                         //空调开关
-    bool isServing = false;            //是否有服务资源
-    bool isWorking = true;             //是否正在工作
-    double cost    = 0.0;              //本次消费
+    bool isOn;                 //空调开关
+    bool isServing;            //是否有服务资源
+    bool isWorking;            //是否正在工作
+    double cost;               //本次消费
 
     QTcpSocket *socket;
-    QString roomID     = "";
-    QString serverIP   = "";
-    quint16 serverPort = 6666;
+    QString roomID;
+    QString serverIP;
+    quint16 serverPort;
 };
 
 #endif // MAINWINDOW_H
