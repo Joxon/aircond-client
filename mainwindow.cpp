@@ -24,15 +24,11 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    currentTemperature = 28.0;
-    settingTemperature = 26.0;
-    outsideTemperature = 28.0;
+    outsideTemperature = 29.0;
 
     isOn = false;
-    wind = 0;
+    wind = NO_WIND;
 
-    ui->cur_temperature_label->setText(QString::number(currentTemperature));
-    ui->set_temperature_label->setText("-");
     ui->state_label->setText(tr("关机"));
 
     loopTimer = new QTimer(this);
@@ -58,7 +54,7 @@ void MainWindow::on_turn_up_pushButton_clicked()
 
         sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_ON, settingTemperature, lastWind);
 
-        ui->set_temperature_label->setText(QString::number(settingTemperature));
+        ui->lineEditSettingTemp->setText(QString::number(settingTemperature));
     }
 }
 
@@ -71,7 +67,7 @@ void MainWindow::on_turn_down_pushButton_clicked()
 
         sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_ON, settingTemperature, lastWind);
 
-        ui->set_temperature_label->setText(QString::number(settingTemperature));
+        ui->lineEditSettingTemp->setText(QString::number(settingTemperature));
     }
 }
 
@@ -82,11 +78,41 @@ void MainWindow::on_power_pushButton_clicked(bool checked)
     {
         isOn = true;
         //初始化部分参数
+        QString      newTemp = ui->lineEditCurrentTemp->text();
+        bool         tempOK;
+        double       newTempD         = newTemp.toDouble(&tempOK);
+        const double MAX_CURRENT_TEMP = 50.0;
+        const double MIN_CURRENT_TEMP = -50.0;
+        if (!tempOK || (newTempD > MAX_CURRENT_TEMP) || (newTempD < MIN_CURRENT_TEMP))
+        {
+            QUIWidget::showMessageBoxError(QString("当前温度不合法！范围：%1 - %2°C").arg
+                                               (QString::number(MIN_CURRENT_TEMP),
+                                               QString::number(MAX_CURRENT_TEMP)));
+            isOn = false;
+            ui->power_pushButton->setChecked(false);
+            return;
+        }
+        currentTemperature = newTempD;
+
+        newTemp  = ui->lineEditSettingTemp->text();
+        newTempD = newTemp.toDouble(&tempOK);
+        if (!tempOK || (newTempD > MAX_SET_TEMPERATURE) || (newTempD < MIN_SET_TEMPERATURE))
+        {
+            QUIWidget::showMessageBoxError(QString("设定温度不合法！范围：%1 - %2°C").arg
+                                               (QString::number(MIN_SET_TEMPERATURE),
+                                               QString::number(MAX_SET_TEMPERATURE)));
+            isOn = false;
+            ui->power_pushButton->setChecked(false);
+            return;
+        }
+        settingTemperature = newTempD;
+
         QString newID = ui->lineEditRoomID->text();
         if (newID.isEmpty())
         {
             QUIWidget::showMessageBoxError("房间号不能为空！");
             isOn = false;
+            ui->power_pushButton->setChecked(false);
             return;
         }
         roomID = newID;
@@ -96,6 +122,7 @@ void MainWindow::on_power_pushButton_clicked(bool checked)
         {
             QUIWidget::showMessageBoxError("IP不合法！");
             isOn = false;
+            ui->power_pushButton->setChecked(false);
             return;
         }
         serverIP = newIP;
@@ -106,44 +133,48 @@ void MainWindow::on_power_pushButton_clicked(bool checked)
         {
             QUIWidget::showMessageBoxError("端口不合法！");
             isOn = false;
+            ui->power_pushButton->setChecked(false);
             return;
         }
         serverPort = newPort;
 
         socket->connectToHost(serverIP, serverPort);
 
-        settingTemperature = 26;
-        lastWind           = LOW_WIND;
-        wind      = LOW_WIND;
+        lastWind  = MID_WIND;
+        wind      = MID_WIND;
         isWorking = false;
         //需要一个请求服务的函数 返回给is_surving
         sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_ON, settingTemperature, wind);
 
         //显示设置
+        ui->lineEditCurrentTemp->setEnabled(false);
+        ui->lineEditSettingTemp->setEnabled(false);
         ui->lineEditRoomID->setEnabled(false);
         ui->lineEditServerIP->setEnabled(false);
         ui->lineEditServerPort->setEnabled(false);
-        ui->set_temperature_label->setText(QString::number(settingTemperature));
+        ui->lineEditSettingTemp->setText(QString::number(settingTemperature));
         if (isServing)
         {
             ui->state_label->setText(tr("低风服务中"));
         }
         else
         {
-            ui->state_label->setText(tr("等待服务"));
+            ui->state_label->setText(tr("等待服务中"));
         }
     }
     else
     {
-        isOn = false;
-        sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_OFF, -1.0, -1);
+        isOn      = false;
         isWorking = false;
         isServing = false;
 
+        sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_OFF, -1.0, -1);
+
+        ui->lineEditCurrentTemp->setEnabled(true);
+        ui->lineEditSettingTemp->setEnabled(true);
         ui->lineEditRoomID->setEnabled(true);
         ui->lineEditServerIP->setEnabled(true);
         ui->lineEditServerPort->setEnabled(true);
-        ui->set_temperature_label->setText("N/A");
         ui->state_label->setText(tr("关机"));
     }
 }
@@ -252,8 +283,8 @@ void MainWindow::loop()
                 ui->state_label->setText(tr("未知风速") + (QString::number(wind)));
                 break;
             }
-            ui->cur_temperature_label->setText(QString::number(currentTemperature));
-            ui->set_temperature_label->setText(QString::number(settingTemperature));
+            ui->lineEditCurrentTemp->setText(QString::number(currentTemperature));
+            ui->lineEditSettingTemp->setText(QString::number(settingTemperature));
             ui->cost_label->setText(QString::number(cost));
         }
         else
@@ -264,12 +295,13 @@ void MainWindow::loop()
     else
     {
         naturalTemp();
-        ui->cur_temperature_label->setText(QString::number(currentTemperature));
+        //ui->lineEditCurrentTemp->setText(QString::number(currentTemperature));
+
         ui->state_label->setText(tr("关机"));
         ui->cost_label->setText("-");
     }
 //   ui->cost_label->setText(QString::number(cost));
-//   ui->cur_temperature_label->setText(QString::number(cur_temperature));
+//   ui->lineEditCurrentTemp->setText(QString::number(cur_temperature));
 }
 
 

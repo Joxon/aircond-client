@@ -58,13 +58,6 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QLabel" name="cur_temperature_label">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
            <item row="0" column="2">
             <widget class="QLabel" name="label_2">
              <property name="text">
@@ -86,13 +79,6 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QLabel" name="set_temperature_label">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
            <item row="3" column="0">
             <widget class="QLabel" name="label_5">
              <property name="text">
@@ -111,6 +97,32 @@
             <widget class="QLabel" name="label_8">
              <property name="text">
               <string>元</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="lineEditCurrentTemp">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>28.0</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="lineEditSettingTemp">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>26.0</string>
              </property>
             </widget>
            </item>
@@ -144,14 +156,14 @@
            <item row="0" column="1">
             <widget class="QLineEdit" name="lineEditRoomID">
              <property name="text">
-              <string>test</string>
+              <string>room7</string>
              </property>
             </widget>
            </item>
            <item row="1" column="1">
             <widget class="QLineEdit" name="lineEditServerIP">
              <property name="text">
-              <string>127.0.0.1</string>
+              <string>10.206.12.202</string>
              </property>
             </widget>
            </item>
@@ -174,7 +186,7 @@
            <item row="2" column="1">
             <widget class="QLineEdit" name="lineEditServerPort">
              <property name="text">
-              <string>6666</string>
+              <string>8080</string>
              </property>
             </widget>
            </item>
