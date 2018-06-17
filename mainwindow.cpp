@@ -120,6 +120,9 @@ void MainWindow::on_power_pushButton_clicked(bool checked)
         sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_ON, settingTemperature, wind);
 
         //显示设置
+        ui->lineEditRoomID->setEnabled(false);
+        ui->lineEditServerIP->setEnabled(false);
+        ui->lineEditServerPort->setEnabled(false);
         ui->set_temperature_label->setText(QString::number(settingTemperature));
         if (isServing)
         {
@@ -136,6 +139,10 @@ void MainWindow::on_power_pushButton_clicked(bool checked)
         sendRequestMsg(REQ_TYPE_CODE, roomID, SWITCH_OFF, -1.0, -1);
         isWorking = false;
         isServing = false;
+
+        ui->lineEditRoomID->setEnabled(true);
+        ui->lineEditServerIP->setEnabled(true);
+        ui->lineEditServerPort->setEnabled(true);
         ui->set_temperature_label->setText("N/A");
         ui->state_label->setText(tr("关机"));
     }
@@ -158,14 +165,17 @@ void MainWindow::coolDown()
 
     case LOW_WIND:
         ui->state_label->setText(tr("低风服务中"));
-        currentTemperature -= 0.05;        break;
+        currentTemperature -= 0.05;
+        break;
 
     default:
         qDebug() << DATETIME << "coolDown: unknown wind =" << wind;
         break;
     }
-    if(currentTemperature<settingTemperature)
-        currentTemperature=settingTemperature;
+    if (currentTemperature < settingTemperature)
+    {
+        currentTemperature = settingTemperature;
+    }
 }
 
 
@@ -192,8 +202,10 @@ void MainWindow::heatUp()
         qDebug() << DATETIME << "heatUp: unknown wind =" << wind;
         break;
     }
-    if(currentTemperature>settingTemperature)
-        currentTemperature=settingTemperature;
+    if (currentTemperature > settingTemperature)
+    {
+        currentTemperature = settingTemperature;
+    }
 }
 
 
